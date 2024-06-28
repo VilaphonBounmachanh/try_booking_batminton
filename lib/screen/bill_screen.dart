@@ -18,6 +18,7 @@ class BillPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final List<String> allTimeSlots = bookingDetails.values.expand((slots) => slots).toList();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Bill Details'),
@@ -60,16 +61,13 @@ class BillPage extends StatelessWidget {
             const SizedBox(height: 10),
             Expanded(
               child: ListView.builder(
-                itemCount: bookingDetails.keys.length,
+                itemCount: allTimeSlots.length,
                 itemBuilder: (context, index) {
-                  final date = bookingDetails.keys.elementAt(index);
-                  final timeSlots = bookingDetails[date]!;
-                  final formattedDate = DateFormat('yyyy-MM-dd').format(date);
+                  final timeSlot = allTimeSlots[index];
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 8.0),
                     child: ListTile(
-                      title: Text('Date: $formattedDate'),
-                      subtitle: Text('Time Slots: ${timeSlots.join(', ')}'),
+                      title: Text(timeSlot),
                     ),
                   );
                 },

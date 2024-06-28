@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:trycode/model/court.dart';
 import 'package:trycode/controller/detail_controller.dart';
+import 'package:trycode/screen/bill_screen.dart';
 
 class DetailPage extends StatelessWidget {
   final Court court;
@@ -18,9 +19,10 @@ class DetailPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Booking Details'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
+      body: SingleChildScrollView(
+        // Added SingleChildScrollView
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -34,7 +36,9 @@ class DetailPage extends StatelessWidget {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   image: DecorationImage(
-                    image: AssetImage(court.imageUrl),
+                    image: AssetImage(
+                      court.imageUrl,
+                    ),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -44,7 +48,6 @@ class DetailPage extends StatelessWidget {
                 'Booking Details:',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 10),
               Form(
                 key: detailController.formKey,
                 child: Column(
@@ -65,7 +68,16 @@ class DetailPage extends StatelessWidget {
                     Center(
                       child: ElevatedButton(
                         onPressed: () {
-                          detailController.confirmBooking(court, bookingDetails);
+                          if (detailController.formKey.currentState!.validate()) {
+                            Get.to(
+                              () => BillPage(
+                                court: court,
+                                bookingDetails: bookingDetails,
+                                username: detailController.usernameController.text,
+                                phoneNumber: detailController.phoneNumberController.text,
+                              ),
+                            );
+                          }
                         },
                         child: const Text('Confirm Booking'),
                       ),
@@ -74,9 +86,13 @@ class DetailPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
+              const Text(
+                'Selected Time Slots:',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
               ListView.builder(
-                physics: NeverScrollableScrollPhysics(), // Disable ListView's own scrolling
-                shrinkWrap: true, // Take up only the necessary space
+                shrinkWrap: true, // Added shrinkWrap to ListView.builder
+                physics: const NeverScrollableScrollPhysics(), // Disabled internal scrolling
                 itemCount: bookingDetails.keys.length,
                 itemBuilder: (context, index) {
                   final date = bookingDetails.keys.elementAt(index);

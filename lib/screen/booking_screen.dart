@@ -1,10 +1,9 @@
-// ignore_for_file: library_private_types_in_public_api, avoid_print
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:date_picker_timeline/date_picker_timeline.dart';
 import 'package:trycode/controller/booking_controller.dart';
 import 'package:trycode/model/court.dart';
+import 'package:intl/intl.dart';
 import 'package:trycode/screen/detail_screen.dart';
 
 class BookingScreen extends StatefulWidget {
@@ -20,30 +19,33 @@ class _BookingScreenState extends State<BookingScreen> {
   final BookingController bookingController = Get.find();
 
   final List<String> timeSlots = [
-    '9:00 - 10:00 AM',
-    '10:00 - 11:00 AM',
-    '11:00 - 12:00 PM',
-    '1:00 - 2:00 PM',
-    '2:00 - 3:00 PM',
-    '3:00 - 4:00 PM',
-    '4:00 - 5:00 PM',
-    '5:00 - 6:00 PM',
-    '6:00 - 7:00 PM',
-    '7:00 - 8:00 PM',
-    '8:00 - 9:00 PM',
-    '9:00 - 10:00 PM',
-    '10:00 - 11:00 PM',
+    '9:00 AM - 10:00 AM',
+    '10:00 AM- 11:00 AM',
+    '11:00 AM- 12:00 PM',
+    '12:00 PM- 1:00 PM',
+    '1:00 PM - 2:00 PM',
+    '2:00 PM - 3:00 PM',
+    '3:00 PM - 4:00 PM',
+    '4:00 PM - 5:00 PM',
+    '5:00 PM - 6:00 PM',
+    '6:00 PM - 7:00 PM',
+    '7:00 PM - 8:00 PM',
+    '8:00 PM - 9:00 PM',
+    '9:00 PM - 10:00 PM',
+    '10:00 PM - 11:00 PM',
   ];
 
-  Map<DateTime, List<String>> selectedTimeSlotsMap = {};
-
-  DateTime _selectedDate = DateTime.now(); // Initialize with current date
+  Map<DateTime, Map<String, bool>> bookingDetails = {};
+  DateTime _selectedDate = DateTime.now();
 
   @override
   void initState() {
     super.initState();
-    // Initialize all time slots as empty for the current date
-    selectedTimeSlotsMap[_selectedDate] = [];
+    // Initialize bookingDetails for the current date
+    bookingDetails[_selectedDate] = {};
+    for (var timeSlot in timeSlots) {
+      bookingDetails[_selectedDate]![timeSlot] = false;
+    }
   }
 
   @override
@@ -93,18 +95,23 @@ class _BookingScreenState extends State<BookingScreen> {
                 itemCount: timeSlots.length,
                 itemBuilder: (context, index) {
                   final timeSlot = timeSlots[index];
+                  final isSelected = bookingDetails[_selectedDate]?[timeSlot] ?? false;
+                  final isTimePassed = _isTimePassed(timeSlot);
+                  final isCurrentDate = _selectedDate.isAtSameMomentAs(DateTime.now());
+
+                  // Enable or disable onChanged based on whether it's the current date
+                  final canChangeTimeSlot = isCurrentDate || !isTimePassed;
+
                   return CheckboxListTile(
                     title: Text(timeSlot),
-                    value: selectedTimeSlotsMap[_selectedDate]?.contains(timeSlot) ?? false,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        if (value!) {
-                          selectedTimeSlotsMap.update(_selectedDate, (slots) => [...slots, timeSlot], ifAbsent: () => [timeSlot]);
-                        } else {
-                          selectedTimeSlotsMap[_selectedDate]?.remove(timeSlot);
-                        }
-                      });
-                    },
+                    value: isSelected,
+                    onChanged: canChangeTimeSlot
+                        ? (bool? value) {
+                            setState(() {
+                              bookingDetails[_selectedDate]![timeSlot] = value!;
+                            });
+                          }
+                        : null,
                   );
                 },
               ),
@@ -112,17 +119,25 @@ class _BookingScreenState extends State<BookingScreen> {
             Center(
               child: ElevatedButton(
                 onPressed: () {
-                  // Process the selected dates and time slots
-                  selectedTimeSlotsMap.forEach((date, timeSlots) {
-                    if (timeSlots.isNotEmpty) {
-                      print('Date: $date');
-                      print('Time Slots: ${timeSlots.join(', ')}');
-                    }
-                  });
-                  // Navigate to DetailPage with the booking details and court details
+                  final Map<DateTime, List<String>> selectedBookingDetails = {};
+
+                  bookingDetails.forEach(
+                    (date, slots) {
+                      final selectedSlots = slots.entries.where((entry) => entry.value).map((entry) => entry.key).toList();
+                      if (selectedSlots.isNotEmpty) {
+                        selectedBookingDetails[date] = selectedSlots;
+                      }
+                    },
+                  );
+
+                  if (selectedBookingDetails.isEmpty) {
+                    Get.snackbar('Error', 'Please select at least one time slot', backgroundColor: Colors.red, colorText: Colors.white);
+                    return;
+                  }
+
                   Get.to(() => DetailPage(
                         court: widget.court,
-                        bookingDetails: selectedTimeSlotsMap,
+                        bookingDetails: selectedBookingDetails,
                       ));
                 },
                 child: const Text('Confirm Booking'),
@@ -151,12 +166,25 @@ class _BookingScreenState extends State<BookingScreen> {
       onDateChange: (date) {
         setState(() {
           _selectedDate = date;
-          // Clear time slots for the new selected date
-          if (!selectedTimeSlotsMap.containsKey(date)) {
-            selectedTimeSlotsMap[date] = [];
+          if (!bookingDetails.containsKey(date)) {
+            bookingDetails[date] = {};
+            for (var timeSlot in timeSlots) {
+              bookingDetails[date]![timeSlot] = false;
+            }
           }
         });
       },
     );
+  }
+
+  bool _isTimePassed(String timeSlot) {
+    DateTime now = DateTime.now();
+    DateTime parsedTime = DateFormat('hh:mm a').parse(timeSlot.split(' - ')[0]);
+
+    // Adjust the parsedTime to compare against _selectedDate's date
+    parsedTime = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, parsedTime.hour, parsedTime.minute);
+
+    // Check if parsedTime is in the past relative to now
+    return now.isAfter(parsedTime);
   }
 }
