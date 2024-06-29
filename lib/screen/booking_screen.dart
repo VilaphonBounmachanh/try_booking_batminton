@@ -37,6 +37,8 @@ class _BookingScreenState extends State<BookingScreen> {
 
   Map<DateTime, Map<String, bool>> bookingDetails = {};
   DateTime _selectedDate = DateTime.now();
+  int totalPrice = 0;
+  final int pricePerSlot = 80000;
 
   @override
   void initState() {
@@ -46,6 +48,17 @@ class _BookingScreenState extends State<BookingScreen> {
     for (var timeSlot in timeSlots) {
       bookingDetails[_selectedDate]![timeSlot] = false;
     }
+  }
+
+  void _calculateTotalPrice() {
+    totalPrice = 0;
+    bookingDetails.forEach((date, slots) {
+      slots.forEach((timeSlot, isSelected) {
+        if (isSelected) {
+          totalPrice += pricePerSlot;
+        }
+      });
+    });
   }
 
   @override
@@ -109,6 +122,7 @@ class _BookingScreenState extends State<BookingScreen> {
                         ? (bool? value) {
                             setState(() {
                               bookingDetails[_selectedDate]![timeSlot] = value!;
+                              _calculateTotalPrice();
                             });
                           }
                         : null,
@@ -116,6 +130,13 @@ class _BookingScreenState extends State<BookingScreen> {
                 },
               ),
             ),
+            Center(
+              child: Text(
+                'Total Price: $totalPrice',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 10),
             Center(
               child: ElevatedButton(
                 onPressed: () {
@@ -135,10 +156,13 @@ class _BookingScreenState extends State<BookingScreen> {
                     return;
                   }
 
-                  Get.to(() => DetailPage(
-                        court: widget.court,
-                        bookingDetails: selectedBookingDetails,
-                      ));
+                  Get.to(
+                    () => DetailPage(
+                      court: widget.court,
+                      bookingDetails: selectedBookingDetails,
+                      totalPrice: totalPrice, // Pass the total price
+                    ),
+                  );
                 },
                 child: const Text('Confirm Booking'),
               ),

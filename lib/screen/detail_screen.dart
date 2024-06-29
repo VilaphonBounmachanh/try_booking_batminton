@@ -8,19 +8,31 @@ import 'package:trycode/screen/bill_screen.dart';
 class DetailPage extends StatelessWidget {
   final Court court;
   final Map<DateTime, List<String>> bookingDetails;
+  final int totalPrice;
 
-  DetailPage({Key? key, required this.court, required this.bookingDetails}) : super(key: key);
+  DetailPage({
+    Key? key,
+    required this.court,
+    required this.bookingDetails,
+    required this.totalPrice,
+  }) : super(key: key);
 
   final DetailController detailController = Get.put(DetailController());
+  final int discount = 20000;
+
+  int calculateDiscountedPrice(int totalPrice) {
+    return totalPrice - discount;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final int finalTotalPrice = calculateDiscountedPrice(totalPrice);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Booking Details'),
       ),
       body: SingleChildScrollView(
-        // Added SingleChildScrollView
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -75,6 +87,7 @@ class DetailPage extends StatelessWidget {
                                 bookingDetails: bookingDetails,
                                 username: detailController.usernameController.text,
                                 phoneNumber: detailController.phoneNumberController.text,
+                                finalTotalPrice: finalTotalPrice,
                               ),
                             );
                           }
@@ -91,8 +104,8 @@ class DetailPage extends StatelessWidget {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               ListView.builder(
-                shrinkWrap: true, // Added shrinkWrap to ListView.builder
-                physics: const NeverScrollableScrollPhysics(), // Disabled internal scrolling
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
                 itemCount: bookingDetails.keys.length,
                 itemBuilder: (context, index) {
                   final date = bookingDetails.keys.elementAt(index);
@@ -106,6 +119,21 @@ class DetailPage extends StatelessWidget {
                     ),
                   );
                 },
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Total Price: $totalPrice',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Discount: -$discount',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Final Total Price: $finalTotalPrice',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
               ),
             ],
           ),

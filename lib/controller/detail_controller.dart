@@ -34,20 +34,20 @@ class DetailController extends GetxController {
     return null;
   }
 
-  void confirmBooking(Court court, Map<DateTime, List<String>> bookingDetails) {
-    if (formKey.currentState!.validate()) {
-      final username = usernameController.text;
-      final phoneNumber = phoneNumberController.text;
+  // void confirmBooking(Court court, Map<DateTime, List<String>> bookingDetails) {
+  //   if (formKey.currentState!.validate()) {
+  //     final username = usernameController.text;
+  //     final phoneNumber = phoneNumberController.text;
 
-      print('Username: $username');
-      print('Phone Number: $phoneNumber');
+  //     print('Username: $username');
+  //     print('Phone Number: $phoneNumber');
 
-      Get.to(() => BillPage(
-            court: court,
-            bookingDetails: bookingDetails,
-            username: username,
-            phoneNumber: phoneNumber,
-          ));
-    }
-  }
+  //     Get.to(() => BillPage(
+  //           court: court,
+  //           bookingDetails: bookingDetails,
+  //           username: username,
+  //           phoneNumber: phoneNumber,
+  //         ));
+  //   }
+  // }
 }

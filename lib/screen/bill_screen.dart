@@ -7,6 +7,7 @@ class BillPage extends StatelessWidget {
   final Map<DateTime, List<String>> bookingDetails;
   final String username;
   final String phoneNumber;
+  final int finalTotalPrice;
 
   const BillPage({
     Key? key,
@@ -14,6 +15,7 @@ class BillPage extends StatelessWidget {
     required this.bookingDetails,
     required this.username,
     required this.phoneNumber,
+    required this.finalTotalPrice,
   }) : super(key: key);
 
   @override
