@@ -122,6 +122,7 @@ class _BookingScreenState extends State<BookingScreen> {
                         ? (bool? value) {
                             setState(() {
                               bookingDetails[_selectedDate]![timeSlot] = value!;
+                              print(bookingDetails);
                               _calculateTotalPrice();
                             });
                           }
