@@ -6,14 +6,14 @@ import 'package:trycode/model/court.dart';
 import 'package:trycode/screen/bill_screen.dart';
 
 class DetailController extends GetxController {
-  final usernameController = TextEditingController();
-  final phoneNumberController = TextEditingController();
   final formKey = GlobalKey<FormState>();
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
 
   @override
   void onClose() {
-    usernameController.dispose();
-    phoneNumberController.dispose();
+    nameController.dispose();
+    phoneController.dispose();
     super.onClose();
   }
 

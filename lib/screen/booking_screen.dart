@@ -1,9 +1,12 @@
+// ignore_for_file: library_private_types_in_public_api
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:date_picker_timeline/date_picker_timeline.dart';
-import 'package:trycode/controller/booking_controller.dart';
+
 import 'package:trycode/model/court.dart';
 import 'package:intl/intl.dart';
+import 'package:trycode/model/list_court.dart';
 import 'package:trycode/screen/detail_screen.dart';
 
 class BookingScreen extends StatefulWidget {
@@ -16,8 +19,6 @@ class BookingScreen extends StatefulWidget {
 }
 
 class _BookingScreenState extends State<BookingScreen> {
-  final BookingController bookingController = Get.find();
-
   final List<String> timeSlots = [
     '9:00 AM - 10:00 AM',
     '10:00 AM- 11:00 AM',
@@ -35,30 +36,43 @@ class _BookingScreenState extends State<BookingScreen> {
     '10:00 PM - 11:00 PM',
   ];
 
-  Map<DateTime, Map<String, bool>> bookingDetails = {};
+  List<ListCourt> bookingDetails = [];
   DateTime _selectedDate = DateTime.now();
   int totalPrice = 0;
   final int pricePerSlot = 80000;
+  final int discount = 20000;
 
   @override
   void initState() {
     super.initState();
-    // Initialize bookingDetails for the current date
-    bookingDetails[_selectedDate] = {};
-    for (var timeSlot in timeSlots) {
-      bookingDetails[_selectedDate]![timeSlot] = false;
-    }
+    _initializeBookingDetails(_selectedDate);
+  }
+
+  void _initializeBookingDetails(DateTime date) {
+    bookingDetails.add(ListCourt(date: DateFormat('yyyy-MM-dd').format(date), durationTime: []));
   }
 
   void _calculateTotalPrice() {
-    totalPrice = 0;
-    bookingDetails.forEach((date, slots) {
-      slots.forEach((timeSlot, isSelected) {
-        if (isSelected) {
-          totalPrice += pricePerSlot;
-        }
-      });
-    });
+    totalPrice = bookingDetails.fold(
+      0,
+      (sum, courtModel) => sum + (courtModel.durationTime.length * pricePerSlot),
+    );
+  }
+
+  void _addToCart() {
+    final selectedCourtModels = bookingDetails.where((courtModel) => courtModel.durationTime.isNotEmpty).toList();
+
+    if (selectedCourtModels.isEmpty) {
+      Get.snackbar('Error', 'Please select at least one time slot', backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+    Get.to(
+      () => DetailPage(
+        court: widget.court,
+        bookingDetails: selectedCourtModels,
+        totalPrice: totalPrice,
+      ),
+    );
   }
 
   @override
@@ -108,11 +122,17 @@ class _BookingScreenState extends State<BookingScreen> {
                 itemCount: timeSlots.length,
                 itemBuilder: (context, index) {
                   final timeSlot = timeSlots[index];
-                  final isSelected = bookingDetails[_selectedDate]?[timeSlot] ?? false;
+                  final currentCourtModel = bookingDetails.firstWhere(
+                    (courtModel) => courtModel.date == DateFormat('yyyy-MM-dd').format(_selectedDate),
+                    orElse: () => ListCourt(
+                      date: '',
+                      durationTime: [],
+                    ),
+                  );
+                  final isSelected = currentCourtModel.durationTime.contains(timeSlot);
                   final isTimePassed = _isTimePassed(timeSlot);
                   final isCurrentDate = _selectedDate.isAtSameMomentAs(DateTime.now());
 
-                  // Enable or disable onChanged based on whether it's the current date
                   final canChangeTimeSlot = isCurrentDate || !isTimePassed;
 
                   return CheckboxListTile(
@@ -121,8 +141,11 @@ class _BookingScreenState extends State<BookingScreen> {
                     onChanged: canChangeTimeSlot
                         ? (bool? value) {
                             setState(() {
-                              bookingDetails[_selectedDate]![timeSlot] = value!;
-                              print(bookingDetails);
+                              if (value == true) {
+                                currentCourtModel.durationTime.add(timeSlot);
+                              } else {
+                                currentCourtModel.durationTime.remove(timeSlot);
+                              }
                               _calculateTotalPrice();
                             });
                           }
@@ -140,31 +163,7 @@ class _BookingScreenState extends State<BookingScreen> {
             const SizedBox(height: 10),
             Center(
               child: ElevatedButton(
-                onPressed: () {
-                  final Map<DateTime, List<String>> selectedBookingDetails = {};
-
-                  bookingDetails.forEach(
-                    (date, slots) {
-                      final selectedSlots = slots.entries.where((entry) => entry.value).map((entry) => entry.key).toList();
-                      if (selectedSlots.isNotEmpty) {
-                        selectedBookingDetails[date] = selectedSlots;
-                      }
-                    },
-                  );
-
-                  if (selectedBookingDetails.isEmpty) {
-                    Get.snackbar('Error', 'Please select at least one time slot', backgroundColor: Colors.red, colorText: Colors.white);
-                    return;
-                  }
-
-                  Get.to(
-                    () => DetailPage(
-                      court: widget.court,
-                      bookingDetails: selectedBookingDetails,
-                      totalPrice: totalPrice, // Pass the total price
-                    ),
-                  );
-                },
+                onPressed: _addToCart,
                 child: const Text('Confirm Booking'),
               ),
             ),
@@ -191,11 +190,8 @@ class _BookingScreenState extends State<BookingScreen> {
       onDateChange: (date) {
         setState(() {
           _selectedDate = date;
-          if (!bookingDetails.containsKey(date)) {
-            bookingDetails[date] = {};
-            for (var timeSlot in timeSlots) {
-              bookingDetails[date]![timeSlot] = false;
-            }
+          if (!bookingDetails.any((courtModel) => courtModel.date == DateFormat('yyyy-MM-dd').format(date))) {
+            _initializeBookingDetails(date);
           }
         });
       },
@@ -206,10 +202,8 @@ class _BookingScreenState extends State<BookingScreen> {
     DateTime now = DateTime.now();
     DateTime parsedTime = DateFormat('hh:mm a').parse(timeSlot.split(' - ')[0]);
 
-    // Adjust the parsedTime to compare against _selectedDate's date
     parsedTime = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, parsedTime.hour, parsedTime.minute);
 
-    // Check if parsedTime is in the past relative to now
     return now.isAfter(parsedTime);
   }
 }

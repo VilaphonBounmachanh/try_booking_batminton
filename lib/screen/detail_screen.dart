@@ -1,13 +1,16 @@
+// ignore_for_file: must_be_immutable
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
+
 import 'package:trycode/model/court.dart';
 import 'package:trycode/controller/detail_controller.dart';
-import 'package:trycode/screen/bill_screen.dart';
+import 'package:trycode/model/list_court.dart';
+import 'package:trycode/screen/bill_page.dart';
 
 class DetailPage extends StatelessWidget {
   final Court court;
-  final Map<DateTime, List<String>> bookingDetails;
+  List<ListCourt> bookingDetails;
   final int totalPrice;
 
   DetailPage({
@@ -18,15 +21,10 @@ class DetailPage extends StatelessWidget {
   }) : super(key: key);
 
   final DetailController detailController = Get.put(DetailController());
-  final int discount = 20000;
-
-  int calculateDiscountedPrice(int totalPrice) {
-    return totalPrice - discount;
-  }
 
   @override
   Widget build(BuildContext context) {
-    final int finalTotalPrice = calculateDiscountedPrice(totalPrice);
+    int finalTotal = totalPrice - 20000; // Apply discount here
 
     return Scaffold(
       appBar: AppBar(
@@ -65,16 +63,71 @@ class DetailPage extends StatelessWidget {
                 child: Column(
                   children: [
                     TextFormField(
-                      controller: detailController.usernameController,
-                      decoration: const InputDecoration(labelText: 'Username'),
-                      validator: detailController.validateUsername,
+                      controller: detailController.nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Name',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your name';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 10),
                     TextFormField(
-                      controller: detailController.phoneNumberController,
-                      decoration: const InputDecoration(labelText: 'Phone Number'),
-                      keyboardType: TextInputType.phone,
-                      validator: detailController.validatePhoneNumber,
+                      controller: detailController.phoneController,
+                      decoration: const InputDecoration(
+                        labelText: 'Phone',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your phone number';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Selected Time Slots:',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 10),
+                    ...bookingDetails.map(
+                      (courtModel) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Date: ${courtModel.date}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 5),
+                            ...courtModel.durationTime.map((timeSlot) {
+                              return Text(
+                                timeSlot,
+                                style: const TextStyle(fontSize: 16),
+                              );
+                            }).toList(),
+                            const SizedBox(height: 10),
+                          ],
+                        );
+                      },
+                    ).toList(),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Total Price: $totalPrice',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const Text(
+                      'Discount: 20000',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red),
+                    ),
+                    Text(
+                      'Final Total: $finalTotal',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
                     ),
                     const SizedBox(height: 20),
                     Center(
@@ -82,58 +135,21 @@ class DetailPage extends StatelessWidget {
                         onPressed: () {
                           if (detailController.formKey.currentState!.validate()) {
                             Get.to(
-                              () => BillPage(
+                              () => BillScreen(
                                 court: court,
                                 bookingDetails: bookingDetails,
-                                username: detailController.usernameController.text,
-                                phoneNumber: detailController.phoneNumberController.text,
-                                finalTotalPrice: finalTotalPrice,
+                                finalTotal: finalTotal,
+                                name: detailController.nameController.text,
+                                phone: detailController.phoneController.text,
                               ),
                             );
                           }
                         },
-                        child: const Text('Confirm Booking'),
+                        child: const Text('Proceed to Payment'),
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Selected Time Slots:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: bookingDetails.keys.length,
-                itemBuilder: (context, index) {
-                  final date = bookingDetails.keys.elementAt(index);
-                  final timeSlots = bookingDetails[date]!;
-                  final formattedDate = DateFormat('yyyy-MM-dd').format(date);
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: ListTile(
-                      title: Text('Date: $formattedDate'),
-                      subtitle: Text('Time Slots: ${timeSlots.join(', ')}'),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Total Price: $totalPrice',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Discount: -$discount',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Final Total Price: $finalTotalPrice',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
               ),
             ],
           ),
